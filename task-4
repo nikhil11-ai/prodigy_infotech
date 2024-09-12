@@ -1,0 +1,88 @@
+import pandas as pd
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import nltk
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Download the VADER lexicon if not already downloaded
+nltk.download('vader_lexicon')
+
+# Load the datasets
+df_training = pd.read_csv(r"C:\Users\hp\Desktop\twitter_training.csv", encoding='latin1')
+df_validation = pd.read_csv(r"C:\Users\hp\Desktop\twitter_validation.csv", encoding='latin1')
+
+# Clean column names by stripping any extra spaces
+df_training.columns = df_training.columns.str.strip()
+df_validation.columns = df_validation.columns.str.strip()
+
+# Print out the cleaned column names
+print("Training Data Columns:", df_training.columns.tolist())
+print("Validation Data Columns:", df_validation.columns.tolist())
+
+# Inspect data to verify column names and their positions
+print("\nTraining Data Sample:")
+print(df_training.head())
+
+print("\nValidation Data Sample:")
+print(df_validation.head())
+
+# Define correct column names based on inspection
+# Adjust these column names based on your dataset's actual column names
+correct_text_column_training = 'im getting on borderlands and i will murder you all ,'  # Example text column name from training data
+correct_sentiment_column_training = 'Positive'  # Example sentiment column name from training data
+
+correct_text_column_validation = df_validation.columns[-1]  # Assuming last column is the text in validation data
+correct_sentiment_column_validation = df_validation.columns[2]  # Assuming third column is the sentiment in validation data
+
+print(f"\nSelected Columns for Training Data:\nText Column: {correct_text_column_training}\nSentiment Column: {correct_sentiment_column_training}")
+print(f"\nSelected Columns for Validation Data:\nText Column: {correct_text_column_validation}\nSentiment Column: {correct_sentiment_column_validation}")
+
+# Check if selected columns are in both DataFrames
+if correct_text_column_training not in df_training.columns or correct_sentiment_column_training not in df_training.columns:
+    raise KeyError(f"Columns '{correct_text_column_training}' or '{correct_sentiment_column_training}' are not in the training data")
+
+if correct_text_column_validation not in df_validation.columns or correct_sentiment_column_validation not in df_validation.columns:
+    raise KeyError(f"Columns '{correct_text_column_validation}' or '{correct_sentiment_column_validation}' are not in the validation data")
+
+# Step 4: Data Preprocessing with Correct Column Names
+df_training = df_training[[correct_text_column_training, correct_sentiment_column_training]]
+df_validation = df_validation[[correct_text_column_validation, correct_sentiment_column_validation]]
+
+# Handle missing values (if any)
+df_training.dropna(inplace=True)
+df_validation.dropna(inplace=True)
+
+# Display cleaned data
+print("\nCleaned Training Data Sample:")
+print(df_training.head())
+
+print("\nCleaned Validation Data Sample:")
+print(df_validation.head())
+
+# Step 5: Sentiment Analysis
+# Initialize the VADER sentiment analyzer
+sid = SentimentIntensityAnalyzer()
+
+# Apply the VADER analyzer to get sentiment scores
+df_training['sentiment_scores'] = df_training[correct_text_column_training].apply(lambda x: sid.polarity_scores(x))
+df_training['compound'] = df_training['sentiment_scores'].apply(lambda score_dict: score_dict['compound'])
+
+# Categorize sentiment based on compound score
+df_training['predicted_sentiment'] = df_training['compound'].apply(
+    lambda c: 'positive' if c >= 0.05 else ('negative' if c <= -0.05 else 'neutral')
+)
+
+# Display updated data with sentiment analysis
+print("\nTraining Data with Sentiment Scores:")
+print(df_training.head())
+
+# Step 6: Visualization
+plt.figure(figsize=(10, 6))
+
+# Remove palette parameter or use hue if needed
+sns.countplot(x='predicted_sentiment', data=df_training, palette='viridis')
+
+plt.title('Sentiment Distribution in Training Data')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.show()
