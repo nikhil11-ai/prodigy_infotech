@@ -1,0 +1,55 @@
+import pandas as pd
+
+# Load the dataset from the provided CSV file
+file_path = r"C:\Users\hp\Desktop\API_SP.POP.TOTL_DS2_en_csv_v2_3401680.csv"
+df = pd.read_csv(file_path, skiprows=4)  # Skipping the first 4 rows which are usually metadata in World Bank datasets
+
+# Display the first few rows of the dataset to understand its structure
+print(df.head())
+
+# Display the summary information about the DataFrame
+print(df.info())
+
+# Display basic statistics of numerical columns
+print(df.describe())
+
+# Display the unique values in each categorical column
+print(df['Country Name'].unique())
+
+# Check for missing values in the dataset
+missing_values = df.isnull().sum()
+print("Missing values in each column:")
+print(missing_values)
+
+# Dropping rows with missing values (if any exist in critical columns)
+df_cleaned = df.dropna(subset=['Country Name', '2022'])  # Assuming '2022' column contains recent population data
+
+import matplotlib.pyplot as plt
+
+# Count the number of records for each country
+country_counts = df_cleaned['Country Name'].value_counts()
+
+# Plot the bar chart
+plt.figure(figsize=(12, 6))
+country_counts.plot(kind='bar', color='skyblue')
+plt.title('Distribution of Countries in the Dataset')
+plt.xlabel('Country')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.show()
+
+# Check if '2022' column exists and use it for population data
+if '2022' in df_cleaned.columns:
+    population_data = df_cleaned['2022']
+else:
+    # Handle the case where the '2022' column is not found or named differently
+    print("Population data for the year 2022 is not available.")
+
+# Plot the histogram for population distribution
+plt.figure(figsize=(10, 6))
+plt.hist(population_data, bins=30, color='orange', edgecolor='black')
+plt.title('Distribution of Population in 2022')
+plt.xlabel('Population')
+plt.ylabel('Frequency')
+plt.show()
+
